@@ -1,0 +1,500 @@
+@font-face {
+    font-family: 'Technomat';
+    src: url('../../static/default/fonts/technomat/Technomat.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'VM_Circular_yell_black';
+    src: url('../../static/default/fonts/virginMedia/VMCircularYell-Black.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+*,
+*::before,
+*::after {
+box-sizing: border-box;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+body,
+ul,
+ol,
+li,
+p {
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+    cursor: pointer;
+    display: inline-block;
+}
+
+a:hover {
+    cursor: pointer;
+}
+
+label,
+input[type=button],
+input[type=submit],
+input[type=file],
+button {
+    cursor: pointer;
+}
+
+ul,
+li {
+    list-style: none;
+}
+
+ul, ol {
+    font-size: 0;
+}
+
+button,
+input[type="button"],
+input[type="submit"] {
+    border: none;
+    background: none;
+    padding: 0;
+    outline: none;
+}
+
+img {
+width: 100%;
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    font-family: 'Technomat';
+    color: #ffffff;
+    line-height: 1;
+    font-size: 1em;
+}
+canvas {
+    display: block;
+    background-color: #000000;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.h-hidden {
+    display: none;
+}
+
+.controls {
+    display: block;
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    z-index: 1;
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.main-wrapper {
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+.logo {
+    z-index: 10;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    &.game-over {
+        @media screen and (max-width: 768px) {
+            @media (orientation: landscape) {
+               left: 47%;
+            }
+        }
+    }
+}
+
+.logo-img {
+
+    &-game {
+        width: 4em;
+    }
+
+    &-wrapper {
+        max-width: 400px;
+        margin: 0 auto 5em;
+
+        &-game {
+            font-family: 'VM_Circular_yell_black';
+            font-size: 3em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 350px;
+
+            @media screen and (max-width: 1024px) {
+                font-size: 2em;
+                width: 230px;
+            }
+        }
+    }
+}
+
+.logo-title {
+    text-transform: uppercase;
+    font-size: 4em;
+    margin-bottom: 0.5em;
+}
+
+.logo-subtitle {
+    color: #FFFF00;
+    font-size: 2em;
+    margin-bottom: 1em;
+    text-transform: uppercase;
+}
+
+.qrCode-img-wrapper {
+    max-width: 350px;
+    margin: 0 auto;
+}
+
+.button {
+    border: 4px solid #ffffff;
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 2em;
+    padding: 10px 20px;
+    font-family: 'Technomat', serif;
+    cursor: pointer;
+    text-transform: uppercase;
+
+    &:hover,
+    &:focus {
+        background-color: #ffffff;
+        color: #ff0000;
+    }
+
+    &.full-screen {
+        position: absolute;
+        bottom: 3%;
+        right: 2%;
+        z-index: 10;
+    }
+
+    @media screen and (max-width: 1200px) {
+        @media (orientation: landscape) {
+           font-size: 1em;
+        }
+    }
+}
+
+.h-margin-bottom {
+    margin-bottom: 10px;
+}
+
+@media screen and (min-width: 1025px) and (max-width: 1920px) {
+    .logo-img-wrapper {
+        max-width: 250px;
+        margin: 0 auto 5em;
+    }
+
+    .logo-title {
+        font-size: 3em;
+        margin-bottom: 1em;
+    }
+
+    .logo-subtitle {
+        font-size: 1.5em;
+        margin-bottom: 1em;
+    }
+
+    .qrCode-img-wrapper {
+        max-width: 200px;
+        margin: 0 auto;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .logo-img-wrapper {
+        max-width: 150px;
+        margin: 0 auto 30px;
+    }
+
+    .logo-title {
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+
+    .logo-subtitle {
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+
+    .qrCode-img-wrapper {
+        max-width: 50px;
+    }
+
+    .button {
+        font-size: 1em;
+    }
+
+    .controls {
+        top: auto;
+        bottom: 5px;
+    }
+}
+
+.ReactNipple {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+}
+
+.fire-button {
+    top: 0;
+    right: 0;
+}
+
+.joystick {
+    top: 0;
+    left: 0;
+}
+
+.score-board {
+    display: flex;
+    background: transparent;
+    justify-content: space-between;
+    align-items: top;
+    margin: 1em;
+}
+
+.score-board-user {
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    font-size: 2em;
+
+    @media screen and (max-width: 1024px) {
+        font-size: 1em;
+    }
+}
+
+.score-board-leader {
+    z-index: 10;
+    font-size: 2em;
+
+    @media screen and (max-width: 1024px) {
+        font-size: 1em;
+    }
+}
+
+.score-board-list {
+    font-size: 25px;
+
+    @media screen and (max-width: 1024px) {
+        font-size: 16px;
+    }
+}
+
+.score-board-current-score-result {
+    color: yellow;
+}
+
+.score-board-item {
+    display: flex;
+    justify-content: space-between;
+
+    &.first {
+        color: #f36ded
+    }
+
+    &.second {
+        color: #1decf0
+    }
+
+    &.third {
+        color: #e0da24
+    }
+}
+
+.score-form {
+    margin-bottom: 2em;
+
+    @media screen and (max-width: 1024px) {
+        margin-bottom: 20px;
+    }
+}
+
+.score-result {
+    font-size: 4em;
+    margin-bottom: 15px;
+
+    @media screen and (max-width: 1024px) {
+        font-size: 2em;
+    }
+
+    
+    @media (orientation: landscape) {
+        @media screen and (max-width: 1200px) {
+            font-size: 2em;
+        }
+    }
+}
+
+.endgame-timer-tooltip {
+    margin: 15px 0;
+    font-size: 2.5em;
+
+    @media screen and (max-width: 1024px) {
+        font-size: 1em;
+    }
+}
+
+.result-score-wrapper {
+    font-size: 2em;
+
+    @media screen and (max-width: 1024px) {
+        font-size: 1em;
+    }
+}
+
+.orientation-tooltip {
+    margin-top: 15px;
+}
+
+.input-score {
+    padding: 10px 20px;
+    background: transparent;
+    border: 4px solid #ffffff;
+    margin-bottom: 10px;
+    outline: none;
+    font-size: 2em;
+    color: #ffffff;
+
+    @media screen and (max-width: 1200px) {
+        @media (orientation: landscape){
+            margin: 0 10px 0 0;
+            font-size: 1em;
+        }
+    }
+
+    @media screen and (max-width: 1024px) {
+        font-size: 1em;
+    }
+
+    &-label {
+        text-transform: uppercase;
+        font-size: 2em;
+        margin-bottom: 10px;
+
+        @media screen and (max-width: 1200px) {
+            @media (orientation: landscape){
+                margin: 0 10px 0 0;
+                font-size: 1em;
+            }
+        }
+
+        @media screen and (max-width: 1024px) {
+            font-size: 1em;
+        }
+    }
+
+    &-wrapper {
+        display: flex;
+        flex-direction: column;
+
+        @media screen and (max-width: 1200px) {
+            @media (orientation: landscape){
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+    }
+}
+
+.nipple {
+    .back {
+        border: 4px solid #ff0000;
+        background: transparent !important;
+    }
+
+    .front {
+        background: transparent !important;
+        position: relative;
+
+        &::after {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .joystick & {
+        .front::after {
+            content: url(../../static/default/icons/rounded_arrows.svg);
+        }
+    }
+
+    .fire-button & {
+        .front::after {
+            content: url(../../static/default/icons/bolt.svg);
+            font-size: 1.5em;
+        }
+    }
+}
+
+.pseudo-controlls {
+    border: 4px solid #ff0000;
+    background: transparent !important;
+    position: absolute;
+    display: block;
+    width: 100px;
+    height: 100px;
+    opacity: 0.5;
+    border-radius: 50%;
+    top: 65%;
+    left: 7%;
+
+    &::after {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        content: url(../../static/default/icons/rounded_arrows.svg);
+    }
+}
+
+.tooltip {
+    font-size: 2em;
+    position: fixed;
+    bottom: 10px;
+    right: 50%;
+    transform: translateX(50%);
+
+    @media screen and (max-width: 1024px) {
+        font-size: 1em;
+        top: 5px;
+        bottom: auto;
+    }
+}

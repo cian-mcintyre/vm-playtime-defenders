@@ -1,0 +1,646 @@
+/* eslint-disable react/no-string-refs */
+import React, { Component } from 'react';
+import Ship from './Ship';
+import Alien from './Alien';
+import { randomNumBetweenExcluding } from './helpers';
+import { getQrCodeUrl, onControlInput, sendData } from './services';
+import throttle from 'lodash.throttle';
+import ReactNipple from './ReactNipple';
+
+const KEY = {
+    LEFT:  37,
+    RIGHT: 39,
+    UP: 38,
+    A: 65,
+    D: 68,
+    W: 87,
+    SPACE: 32
+};
+
+export class Reacteroids extends Component {
+    constructor() {
+        super();
+        this.state = {
+            screen: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                ratio: window.devicePixelRatio || 1,
+            },
+            context: null,
+            keys : {
+                left  : 0,
+                right : 0,
+                up    : 0,
+                down  : 0,
+                space : 0,
+            },
+<<<<<<< HEAD
+            asteroidCount: 5,
+=======
+            asteroidCount: 3,
+>>>>>>> main
+            currentScore: 0,
+            topScore: localStorage['topscore'] || 0,
+            inGameStatus: 'prepare-game',
+            publicQrCode: null,
+            shipPosition: null,
+            fireControl: null,
+            isJoystickReady: false,
+            isFireButtonReady: false,
+            isRemoteControl: window.location.pathname === '/public/remote-controls',
+            clientUuid: new URLSearchParams(window.location.search).get('uuid') || '',
+            uuid: ''
+        };
+        this.ship = [];
+        this.asteroids = [];
+        this.bullets = [];
+        this.particles = [];
+        this.stars = [];
+        this.qrCodeUrl = null;
+        this.handleQrCodeUrlLoaded = this.handleQrCodeUrlLoaded.bind(this);
+        this.starsGenerated = false;
+    }
+
+    handleResize(){
+        this.setState({
+            screen : {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                ratio: window.devicePixelRatio || 1,
+            }
+        });
+    }
+
+    handleKeys(value, e){
+        const keys = this.state.keys;
+
+        if(e.keyCode === KEY.LEFT   || e.keyCode === KEY.A) {keys.left  = value;}
+
+        if(e.keyCode === KEY.RIGHT  || e.keyCode === KEY.D) {keys.right = value;}
+
+        if(e.keyCode === KEY.UP     || e.keyCode === KEY.W) {keys.up    = value;}
+
+        if(e.keyCode === KEY.SPACE) {keys.space = value;}
+
+        this.setState({
+            keys : keys
+        });
+    }
+
+    componentDidMount() {
+        window.addEventListener('keyup',   this.handleKeys.bind(this, false));
+        window.addEventListener('keydown', this.handleKeys.bind(this, true));
+        window.addEventListener('resize',  this.handleResize.bind(this, false));
+
+        const context = this.refs.canvas.getContext('2d');
+
+        this.setState({ context: context });
+
+        this.prepareGame();
+    
+        requestAnimationFrame(() => {this.update();});
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('keyup', this.handleKeys);
+        window.removeEventListener('keydown', this.handleKeys);
+        window.removeEventListener('resize', this.handleResize);
+    }
+
+    handleQrCodeUrlLoaded(qrCodeUrl) {
+        this.setState({ qrCodeUrl: qrCodeUrl });
+    }
+
+    update() {
+        const context = this.state.context;
+
+        context.save();
+        context.scale(this.state.screen.ratio, this.state.screen.ratio);
+
+        const width = this.state.screen.width;
+        const height = this.state.screen.height;
+
+        // Set grid properties
+        const gridSize = 5; // Size of each grid cell
+        const gridColor = '#9e0309'; // Color of the grid lines
+
+        // Clear the canvas
+        context.clearRect(0, 0, width, height);
+
+        // Create gradient background
+        const gradient = context.createLinearGradient(0, 0, 0, this.state.screen.height);
+
+        gradient.addColorStop(0, '#7d0532');
+        gradient.addColorStop(0.25, '#8c0423');
+        gradient.addColorStop(0.5, '#95041b');
+        gradient.addColorStop(0.75, '#9b050c');
+        gradient.addColorStop(1, '#9e0605');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, width, height);
+
+        // Set the grid color
+        context.strokeStyle = gridColor;
+
+        // Draw vertical lines
+        for (let x = 0; x <= width; x += gridSize) {
+            context.beginPath();
+            context.moveTo(x, 0);
+            context.lineTo(x, height);
+            context.stroke();
+        }
+
+        // Draw horizontal lines
+        for (let y = 0; y <= height; y += gridSize) {
+            context.beginPath();
+            context.moveTo(0, y);
+            context.lineTo(width, y);
+            context.stroke();
+        }
+
+        // }
+
+        // Motion trail
+        //context.fillStyle = grd;//'#8F031C';
+        //context.globalAlpha = 0.4;
+        //context.fillRect(0, 0, this.state.screen.width, this.state.screen.height);
+        //context.globalAlpha = 1;
+
+        if(!this.starsGenerated) {
+            this.generateStars(context, width, height);
+        }
+    
+        this.drawStars(context);
+
+        // Next set of asteroids
+        if(!this.asteroids.length && !this.state.isRemoteControl){
+            const count = this.state.asteroidCount + 1;
+
+            this.setState({ asteroidCount: count });
+            this.generateAsteroids(count);
+        }
+
+        // Check for colisions
+        this.checkCollisionsWith(this.bullets, this.asteroids);
+        this.checkCollisionsWith(this.ship, this.asteroids);
+
+        // Remove or render
+        this.updateObjects(this.particles, 'particles');
+        this.updateObjects(this.asteroids, 'asteroids');
+        this.updateObjects(this.bullets, 'bullets');
+        this.updateObjects(this.ship, 'ship');
+
+        context.restore();
+
+        // Next frame
+        if (this.state.isRemoteControl) {
+            const throttledUpadate = throttle(this.update.bind(this), 30);
+
+            requestAnimationFrame(() => {throttledUpadate();});
+        } else {
+            requestAnimationFrame(() => {this.update();});
+        }
+    }
+
+    // Generate a random color
+    getRandomColor() {
+        const colors = ['#d0d060', '#df54e2', '#ead1e6', '#b96195', '#dc4cda'];
+        const randomIndex = Math.floor(Math.random() * colors.length);
+
+        return colors[randomIndex];
+    }
+
+    // Generate a random color
+    generateStars(context, width, height) {
+        // Draw stars (random dots)
+        const numStars = 175; // Number of stars
+        const minSize = 3; // Minimum size of stars
+        const maxSize = 5; // Maximum size of stars
+        let star = {};
+
+        for (let i = 0; i < numStars; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            const size = Math.random() * (maxSize - minSize) + minSize;
+            const color = this.getRandomColor();
+
+            star = {
+                x: x,
+                y: y,
+                size: size,
+                color: color
+            }
+            this.createObject(star, 'stars');
+        }
+
+        this.starsGenerated = true;
+    }
+
+    drawStars(context){
+        for (let i = 0; i < this['stars'].length; i++) {
+            context.fillStyle = this['stars'][i].color;
+            context.fillRect(this['stars'][i].x, this['stars'][i].y, this['stars'][i].size, this['stars'][i].size);
+        }
+    }
+
+    addScore(points){
+        if(this.state.inGameStatus === 'game-in-progress'){
+            this.setState({
+                currentScore: this.state.currentScore + points,
+            });
+        }
+    }
+
+    prepareGame(){
+        this.setState({
+            inGameStatus: 'prepare-game',
+            currentScore: 0,
+        });
+
+        // Make asteroids
+        this.asteroids = [];
+        this.generateAsteroids(this.state.asteroidCount)
+
+        onControlInput((controlData) => {
+            if (!controlData) {
+                return;
+            }
+
+            if (controlData.event === 'uuid') {
+                this.setState({ uuid: controlData.uuid})
+            }
+            
+            if (controlData.event === 'startGame') {
+                this.startGame();
+            } else if (this.state.isRemoteControl) {
+                if (controlData.event === 'game-over') {
+                    this.remoteGameOver(controlData);
+                }
+            } else if (controlData.event === 'uuid') {
+                getQrCodeUrl(controlData.uuid).then(qrCodeData => {
+                    this.handleQrCodeUrlLoaded(qrCodeData);
+                });
+            }
+            else {
+                this.setState(controlData);
+            }
+        });
+    }
+
+    startOnlineGame() {
+        if (!this.state.isRemoteControl) {
+            this.startGame();
+        } else {
+            this.sendControlData({ event: 'startGame' })
+        }
+    }
+
+    startGame(){
+        this.setState({
+            inGameStatus: 'game-in-progress',
+            currentScore: 0,
+        });
+
+        // Make ship
+        const ship = new Ship({
+            position: {
+                x: this.state.screen.width/2,
+                y: this.state.screen.height/2
+            },
+            create: this.createObject.bind(this),
+            onDie: this.gameOver.bind(this)
+        });
+
+        this.createObject(ship, 'ship');
+        this.createControls();
+        // Make asteroids
+        this.asteroids = [];
+        this.generateAsteroids(this.state.asteroidCount);
+    }
+
+    createControls() {
+        this.createJoystick();
+        this.createFireButton();
+
+        this.setState({ controlsReady: true });
+    }
+
+    createJoystick() {
+        const throttledSendControlData = throttle(this.sendControlData.bind(this), 30);
+
+        this.controlsJoystick = new ReactNipple({
+            options: {
+                mode: 'dynamic',
+                position: { top: '50%', left: '50%' },
+                size: 200
+            },
+            className: 'joystick',
+            onMove: (evt, data) => {
+                if (!this.state.isRemoteControl) {
+                    this.setState({ shipPosition: data });
+                } else {
+                    throttledSendControlData({
+                        event: 'shipControls',
+                        shipPosition: {
+                            angle: data.angle,
+                            force: data.force
+                        }
+                    })
+                }
+        
+            },
+            onEnd: () => {
+                if (!this.state.isRemoteControl) {
+                    this.setState({ shipPosition: {
+                        force: 0
+                    }});
+                } else {
+                    throttledSendControlData({
+                        event: 'shipControls',
+                        shipPosition: {
+                            force: 0
+                        }
+                    });
+                }
+            }
+        });
+
+        this.joystickRender = this.controlsJoystick.render();
+    }
+
+    createFireButton() {
+        this.controlsFireButton = new ReactNipple({
+            options: {
+                mode: 'dynamic',
+                position: { top: '50%', left: '50%' },
+                lockX: true,
+                lockY: true
+            },
+            className: 'fire-button',
+            onStart: () => {
+                if (!this.state.isRemoteControl) {
+                    this.setState({ fireControl: {
+                        fire: true 
+                    }});
+                } else {
+                    this.sendControlData({
+                        event: 'shipControls',
+                        fireControl: {
+                            fire: true 
+                        }
+                    });
+                }
+
+            },
+            onEnd: () => {
+                if (!this.state.isRemoteControl) {
+                    this.setState({ fireControl: {
+                        fire: false 
+                    }});
+                } else {
+                    this.sendControlData({
+                        event: 'shipControls',
+                        fireControl: {
+                            fire: false 
+                        }
+                    });
+                }
+            }
+        });
+
+        this.fireButtonRender = this.controlsFireButton.render();
+    }
+
+    gameOver(){
+        this.setState({
+            inGameStatus: 'game-over',
+        });
+
+        // Replace top score
+        if(this.state.currentScore > this.state.topScore){
+            this.setState({
+                topScore: this.state.currentScore,
+            });
+            localStorage['topscore'] = this.state.currentScore;
+        }
+
+        this.sendControlData({
+            event: 'game-over',
+            score: this.state.currentScore
+        })
+
+        setTimeout(function (){
+            // restart public gamse after 10 sec
+            location.reload();
+        }, 1000000);
+    }
+
+    remoteGameOver(data) {
+        this.setState({
+            inGameStatus: 'remote-game-over',
+            currentScore: data.score
+        });
+    }
+
+    generateAsteroids(howMany){
+        for (let i = 0; i < howMany; i++) {
+            const asteroid = new Alien({
+                type: this.getRandomAlienType(),
+                size: 60,
+                position: {
+                    x: randomNumBetweenExcluding(0, this.state.screen.width, this.state.screen.width/2-60, this.state.screen.width/2+60),
+                    y: randomNumBetweenExcluding(0, this.state.screen.height, this.state.screen.height/2-60, this.state.screen.height/2+60)
+                },
+                create: this.createObject.bind(this),
+                addScore: this.addScore.bind(this)
+            });
+
+            this.createObject(asteroid, 'asteroids');
+        }
+    }
+
+    createObject(item, group){
+        if (!this.state.isRemoteControl) {
+            this[group].push(item);
+        }
+    }
+
+    updateObjects(items, group){
+        let index = 0;
+
+        for (const item of items) {
+            if (item.delete) {
+                this[group].splice(index, 1);
+            }else{
+                items[index].render(this.state);
+            }
+
+            index++;
+        } 
+    }
+
+    checkCollisionsWith(items1, items2) {
+        var a = items1.length - 1;
+        var b;
+
+        for(a; a > -1; --a){
+            b = items2.length - 1;
+
+            for(b; b > -1; --b){
+                var item1 = items1[a];
+                var item2 = items2[b];
+
+                if(this.checkCollision(item1, item2)){
+                    item1.destroy(this.state);
+                    item2.destroy(this.state);
+                }
+            }
+        }
+    }
+
+    checkCollision(obj1, obj2){
+        var vx = obj1.position.x - obj2.position.x;
+        var vy = obj1.position.y - obj2.position.y;
+        var length = Math.sqrt(vx * vx + vy * vy);
+
+        if(length < obj1.radius + obj2.radius){
+            return true;
+        }
+
+        return false;
+    }
+
+    destroyControls() {
+        if (this.controlsJoystick && this.controlsJoystick.joystick) {
+            this.controlsJoystick.joystick.destroy();
+            this.controlsJoystick.joystick = undefined;
+            this.joystickRender = null;
+
+            this.setState({ shipPosition: {
+                force: 0
+            }});
+        }
+
+        if (this.controlsFireButton && this.controlsFireButton.joystick) {
+            this.controlsFireButton.joystick.destroy();
+            this.controlsFireButton.joystick = undefined;
+            this.fireButtonRender = null;
+
+            this.setState({ fireControl: {
+                fire: false
+            }});
+        }
+    }
+
+    sendControlData(data) {
+        sendData({
+            clientUuid: this.state.clientUuid,
+            uuid: this.state.uuid,
+            ...data
+        });
+    }
+
+    render() {
+        let endgame;
+        let qrCode;
+        let logo;
+
+        if(this.state.inGameStatus == 'prepare-game'){
+            endgame = (
+                <div className="endgame">
+                    <p style={{ fontSize: '4em', margin: 0 }}>
+                        <img style={{ width: '5em', margin: 0 }} className="" src='./static/img/logo.png'/>
+                    </p>
+                    <p style={{ fontSize: '4em', margin: 0 }}>PLAYTIME DEFENDERS</p>
+                    <p style={{ color: '#fe72fe', fontSize: '2em' }}>THE BILLBOARD YOU CAN PLAY</p>
+                    <button
+                        onClick={ this.startOnlineGame.bind(this) }>
+                        Scan QR here to Start!
+                    </button>
+                </div>
+            )
+
+            if (this.state.qrCodeUrl && !this.state.isRemoteControl) {
+                qrCode = (
+                    <img className="qrCode" src={ this.state.qrCodeUrl }/>
+                );
+            }
+
+        } else {
+            logo = (
+                <p style={{ fontSize: '2em', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img style={{ width: '4em', margin: 0 }} className="" src='./static/img/logo.png'/> 
+                    <span style={{ fontSize: '15px', marginLeft: '10px' }}>It&apos;s Playtime</span>
+                </p>
+            )
+        }
+
+        if(this.state.inGameStatus == 'game-over'){
+            endgame = (
+                <div className="endgame">
+                    <p style={{ fontSize: '5em', margin: '1em' }}>Game over!</p>
+                    <button
+                        onClick={ this.startOnlineGame.bind(this) }>
+                        try again?
+                    </button>
+                </div>
+            );
+
+            this.destroyControls();
+        }
+        
+        if(this.state.inGameStatus == 'remote-game-over'){
+            endgame = (
+                <div className="endgame">
+                    <p style={{ fontSize: '5em', margin: '1em' }}>Game over!</p>
+                    <p style={{ fontSize: '5em', margin: '1em' }}>Your score: { this.state.currentScore }</p>
+                </div>
+            );
+
+            this.destroyControls();
+        }
+
+        return (
+            <div>
+                { endgame }
+                { qrCode }
+                <span className="score current-score" >YOUR SCORE:</span>
+                <span className="score current-score your-score">PJW {this.state.currentScore}</span>
+                <span className="score top-score" >LEADERBOARD</span>
+                <span className="score top-score" style={{color: '#f36ded', top: '35px'}}>NJD {this.state.topScore}</span>
+                <span className="score top-score" style={{color: '#1decf0', top: '55px'}}>OWD {this.state.topScore}</span>
+                <span className="score top-score" style={{color: '#e0da24', top: '75px'}}>HEX {this.state.topScore}</span>
+                <span className="controls" >
+                    { logo }
+                </span>
+                <canvas ref="canvas"
+                    width={this.state.screen.width * this.state.screen.ratio}
+                    height={this.state.screen.height * this.state.screen.ratio}
+                />
+                
+                { this.joystickRender }
+                { this.fireButtonRender }
+            </div>
+        );
+    }
+
+    getRandomAlienTypes() {
+        this.numbers = [1, 2, 3, 4];
+        let iteration = 1;
+  
+        return function() {
+            if (iteration <= 4) {
+                const index = Math.floor(Math.random() * this.numbers.length);
+                const number = this.numbers.splice(index, 1)[0];
+
+                iteration++;
+              
+                return number;
+            } else {
+                return Math.floor(Math.random() * 4) + 1;
+            }
+        };
+    }
+
+    // Usage:
+    getRandomAlienType = this.getRandomAlienTypes();
+}

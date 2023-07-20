@@ -1,0 +1,191 @@
+import nipplejs from 'nipplejs';
+import isEqual from 'lodash.isequal';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+
+import cx from 'classnames';
+
+/**
+ * A react wrapper component for `nipplejs`.
+ * @see https://www.npmjs.com/package/nipplejs
+ * @author Jovica Aleksic <jovica.aleksic@loopmode.de>
+ */
+export default class ReactNipple extends Component {
+    /* eslint-disable no-trailing-spaces */
+    /**
+     * Component propTypes
+     *
+     * Any additional (unknown) props will be passed along as attributes of the created DOM element.
+     *
+     * @property {string} className - A css classname for the DOM element
+     * @property {object} options - An object with nipplejs options, see https://github.com/yoannmoinet/nipplejs#options
+     * @property {boolean} static - A shortcut for setting the options `{mode: 'static', position: {top: '50%', left: '50%'}}`. Will override values in the `options` object.
+     * @property {function} onCreated - Callback that is invoked with the created instance
+     * @property {function} onDestroy - Callback that is invoked with the instance that is going to be destroyed
+     * @property {function} onStart - Callback for the 'start' event handler, see https://github.com/yoannmoinet/nipplejs#start
+     * @property {function} onEnd - Callback for the 'end' event handler, see https://github.com/yoannmoinet/nipplejs#end
+     * @property {function} onMove - Callback for the 'move' event handler, see https://github.com/yoannmoinet/nipplejs#move
+     * @property {function} onDir - Callback for the 'dir' event handler, see https://github.com/yoannmoinet/nipplejs#dir
+     * @property {function} onPlain - Callback for the 'plain' event handler, see https://github.com/yoannmoinet/nipplejs#plain
+     * @property {function} onShown - Callback for the 'shown' event handler, see https://github.com/yoannmoinet/nipplejs#shown
+     * @property {function} onHidden - Callback for the 'hidden' event handler, see https://github.com/yoannmoinet/nipplejs#hidden
+     * @property {function} onPressure - Callback for the 'pressure' event handler, see https://github.com/yoannmoinet/nipplejs#pressure
+     */
+    /* eslint-enable no-trailing-spaces */
+    static get propTypes() {
+        return {
+            className: PropTypes.string,
+            options: PropTypes.shape({
+                color: PropTypes.string,
+                size: PropTypes.number,
+                threshold: PropTypes.number, // before triggering a directional event
+                fadeTime: PropTypes.number, // transition time
+                multitouch: PropTypes.bool,
+                maxNumberOfNipples: PropTypes.number, // when multitouch, what is too many?
+                dataOnly: PropTypes.bool, // no dom element whatsoever
+                position: PropTypes.object, // preset position for 'static' mode
+                mode: PropTypes.string, // 'dynamic', 'static' or 'semi'
+                restJoystick: PropTypes.bool,
+                restOpacity: PropTypes.number, // opacity when not 'dynamic' and rested
+                catchDistance: PropTypes.number,
+                lockX: PropTypes.bool,
+                lockY: PropTypes.bool,
+                shape: PropTypes.string,
+                dynamicPage: PropTypes.bool
+            }),
+            static: PropTypes.bool,
+            onStart: PropTypes.func,
+            onEnd: PropTypes.func,
+            onMove: PropTypes.func,
+            onDir: PropTypes.func,
+            onPlain: PropTypes.func,
+            onShown: PropTypes.func,
+            onHidden: PropTypes.func,
+            onPressure: PropTypes.func,
+            onCreated: PropTypes.func,
+            onDestroy: PropTypes.func
+        };
+    }
+
+    get ownProps() {
+        return [
+            'options',
+            'static',
+            'onStart',
+            'onEnd',
+            'onMove',
+            'onDir',
+            'onPlain',
+            'onShown',
+            'onHidden',
+            'onPressure',
+            'onCreated'
+        ];
+    }
+    get elementProps() {
+        return Object.entries(this.props).reduce((result, [key, value]) => {
+            if (this.ownProps.includes(key)) {
+                return result;
+            }
+
+            result[key] = value;
+
+            return result;
+        }, {});
+    }
+
+    componentDidUpdate(prevProps) {
+        if (!isEqual(prevProps.options, this.props.options)) {
+            this.destroyJoystick();
+            this.createJoystick();
+        }
+    }
+
+    render() {
+        return (
+            <div {...this.elementProps} ref={this.handleElement.bind(this)} className={cx('ReactNipple', this.props.className)} />
+        );
+    }
+
+    //-----------------------------------
+    //
+    // impl
+    //
+    //-----------------------------------
+
+    handleElement(ref) {
+        this._element = ref;
+
+        if (ref) {
+            this.createJoystick();
+        } else if (this._element) {
+            this.destroyJoystick();
+        }
+    }
+    createJoystick() {
+        const options = {
+            zone: this._element,
+            ...this.props.options
+        };
+
+        if (this.props.static) {
+            options.mode = 'static';
+            options.position = {
+                top: '50%',
+                left: '50%'
+            };
+        }
+
+        const joystick = nipplejs.create(options);
+
+        joystick.on('start', this.handleJoystickStart.bind(this));
+        joystick.on('end', this.handleJoystickEnd.bind(this));
+        joystick.on('move', this.handleJoystickMove.bind(this));
+        joystick.on('dir', this.handleJoystickDir.bind(this));
+        joystick.on('plain', this.handleJoystickPlain.bind(this));
+        joystick.on('shown', this.handleJoystickShown.bind(this));
+        joystick.on('hidden', this.handleJoystickHidden.bind(this));
+        joystick.on('pressure', this.handleJoystickPressure.bind(this));
+
+        this.joystick = joystick;
+
+        if (this.props.onCreated) {
+            this.props.onCreated(this.joystick);
+        }
+    }
+    destroyJoystick() {
+        if (this.joystick) {
+            this.joystick.destroy();
+            this.joystick = undefined;
+        }
+    }
+    invokeCallback(type, evt, data) {
+        if (this.props[type]) {
+            this.props[type](evt, data);
+        }
+    }
+    handleJoystickStart(evt, data) {
+        this.invokeCallback('onStart', evt, data);
+    }
+    handleJoystickEnd(evt, data) {
+        this.invokeCallback('onEnd', evt, data);
+    }
+    handleJoystickMove(evt, data) {
+        this.invokeCallback('onMove', evt, data);
+    }
+    handleJoystickDir(evt, data) {
+        this.invokeCallback('onDir', evt, data);
+    }
+    handleJoystickPlain(evt, data) {
+        this.invokeCallback('onPlain', evt, data);
+    }
+    handleJoystickShown(evt, data) {
+        this.invokeCallback('onShown', evt, data);
+    }
+    handleJoystickHidden(evt, data) {
+        this.invokeCallback('onHidden', evt, data);
+    }
+    handleJoystickPressure(evt, data) {
+        this.invokeCallback('onPressure', evt, data);
+    }
+}

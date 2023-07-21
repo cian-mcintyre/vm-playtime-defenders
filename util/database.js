@@ -6,7 +6,7 @@ let _db;
 const mongoConnect = () => {
     MongoClient.connect(
         // eslint-disable-next-line no-undef
-        process.env.DB_URL || 'mongodb+srv://asteroids:4Cisr5RjKPglPs1b@asteroids.banzpnx.mongodb.net/asteroids?retryWrites=true&w=majority'
+        process.env.DB_URL || 'mongodb+srv://asteroidsdb:keui5XCkmNSsH82O2fus@asteroids.tcfed1n.mongodb.net/asteroids?retryWrites=true&w=majority'
     )
         .then(client => {
             console.log('DB Connected');

@@ -104,7 +104,10 @@ export default class Ship {
         this.velocity.y -= Math.cos(-this.rotation*Math.PI/180) * this.speed;
 
         // Thruster particles
-        const thrustersConfid = [{x:-20, y:-25, rotationCorection: 160}, {x:20, y:-25, rotationCorection: 200}];
+        const thrustersConfid = [
+            {x:-this.shipSize/4, y:-this.shipSize/4, rotationCorection: 160},
+            {x:this.shipSize/4, y:-this.shipSize/4, rotationCorection: 200}
+        ];
 
         thrustersConfid.forEach(thrasterConfig => {
             const posDelta1 = rotatePoint(
@@ -113,7 +116,7 @@ export default class Ship {
                 (this.rotation-thrasterConfig.rotationCorection) * Math.PI / 180
             );
             const particle1 = new Particle({
-                lifeSpan: randomNumBetween(20, 40),
+                lifeSpan: randomNumBetween((this.shipSize/2) - (this.shipSize/2)*0.1, (this.shipSize/2) + (this.shipSize/2)*0.1),
                 size: randomNumBetween(1, 3),
                 type: 'ship',
                 position: {

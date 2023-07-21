@@ -985,7 +985,7 @@ export class Reacteroids extends Component {
                     </button>
                 )
             }
-        } else {
+        } else if (this.state.inGameStatus !== 'game-in-progress' || !this.isSmallView()) {
             logo = (
                 <div className="logo-img-wrapper-game">
                     <img className="logo-img-game" src={window.location.origin + '/static/img/logo.png'}/> 
@@ -1024,7 +1024,7 @@ export class Reacteroids extends Component {
         }
 
         if (this.state.countdown >= 0 && (this.state.isRemoteControl || this.state.isPublic)) {
-            info = ( <p className="endgame-timer-tooltip">End game after: { this.state.countdown }</p> )
+            info = ( <p className="endgame-timer-tooltip">END GAME AFTER: { this.state.countdown }</p> )
         }
 
         if (!this.state.isPublic) {
